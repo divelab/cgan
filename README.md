@@ -1,4 +1,4 @@
-# Conditional Deep Generative Networks for Building an Integrated Cell Model
+# Conditional GAN for Cellular Structure
 
 This is the tensorflow implementation of our recent work, "Conditional Deep Generative Networks for Building an Integrated Cell Model". The paper is not released yet. We will post more detailed information once the paper is published.
 
