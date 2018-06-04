@@ -1,5 +1,7 @@
 
 ## Datasets:
 
-Our experiments are based on the dataset released by [Allen Cell](https://github.com/AllenCellModeling/torch_integrated_cell). Please follow their instructions to download the dataset. You need to randomly split the dataset into training set and testing set. Besides, each image should be resize to 256 by 256.
+Our experiments are based on the dataset released by Allen Cell. 
+
+Use the following command to download: aws s3 cp s3://aics.integrated.cell.arxiv.paper.data . --recursive --no-sign-request
 
