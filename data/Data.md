@@ -7,3 +7,5 @@ For more information regarding the dataset, please check https://github.com/Alle
 
 Use the following command to download: aws s3 cp s3://aics.integrated.cell.arxiv.paper.data . --recursive --no-sign-request
 
+Thanks again for their data.
+
