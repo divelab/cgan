@@ -1,6 +1,4 @@
-##Update
-
-We released more experimental results. Please check the newly uploaded images. Each images contains 5 examples of a same protein class.
+##Update   We released more experimental results. Please check the newly uploaded images. Each images contains 5 examples of a same protein class.
 
 
 
