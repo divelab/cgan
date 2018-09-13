@@ -1,6 +1,6 @@
 # Computational Modeling of Cellular Structures Using Conditional Deep Generative Networks
 
-This is the tensorflow implementation of our recent work, "Computational Modeling of Cellular Structures Using Conditional Deep Generative Networks". The paper is not released yet. We will post more detailed information once the paper is published.
+This is the tensorflow implementation of our recent work, "Computational Modeling of Cellular Structures Using Conditional Deep Generative Networks". The paper is currently under review and not released yet. We have released our experimental results, please check the results folder.
 
 ## How to run it
 
