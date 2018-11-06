@@ -4,6 +4,7 @@ import tensorflow as tf
 import numpy as np
 import math
 import time
+from ops import *
 from data_reader import data_reader
 from progressbar import ETA, Bar, Percentage, ProgressBar
 from imageio import imwrite, imread
