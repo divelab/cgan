@@ -3,11 +3,10 @@ import os
 import tensorflow as tf
 import numpy as np
 import math
-from ops import *
 import time
 from data_reader import data_reader
 from progressbar import ETA, Bar, Percentage, ProgressBar
-from scipy.misc import imsave, imread
+from imageio import imwrite, imread
 from data_reader import data_reader
 
 class GAN(object):
@@ -26,7 +25,7 @@ class GAN(object):
         print("Start building network=================")
         self.configure_networks()
         print("Finishing building network=================")
-    
+
     def configure_networks(self):
         self.global_step  = tf.Variable(0, trainable=False)
         self.build_network()
@@ -34,11 +33,11 @@ class GAN(object):
 
         self.var_gen = [var for var in variables if var.name.startswith('Generator')]
         self.var_disc = [var for var in variables if var.name.startswith('Discriminator')]
-        
-        self.train_disc = tf.contrib.layers.optimize_loss(self.dis_loss, tf.contrib.framework.get_or_create_global_step(), 
+
+        self.train_disc = tf.contrib.layers.optimize_loss(self.dis_loss, tf.contrib.framework.get_or_create_global_step(),
             learning_rate=self.conf.learning_rate, optimizer='Adam', variables=self.var_disc, update_ops=[])
-        self.train_gen = tf.contrib.layers.optimize_loss(self.gen_loss, global_step = self.global_step, 
-            learning_rate=self.conf.learning_rate, optimizer='Adam', variables=self.var_gen, update_ops=[])    
+        self.train_gen = tf.contrib.layers.optimize_loss(self.gen_loss, global_step = self.global_step,
+            learning_rate=self.conf.learning_rate, optimizer='Adam', variables=self.var_gen, update_ops=[])
   #      self.sess = tf.Session()
         self.sess.run(tf.global_variables_initializer())
         trainable_vars = tf.trainable_variables()
@@ -51,7 +50,7 @@ class GAN(object):
     def build_network(self):
 
         self.sampled_z_s = tf.placeholder(tf.float32,[None, self.conf.hidden_size])
-        self.input_y = tf.placeholder(tf.int32,[None,self.conf.n_class])    
+        self.input_y = tf.placeholder(tf.int32,[None,self.conf.n_class])
   #      self.input_latent_r = tf.placeholder(tf.float32,[None, self.conf.hidden_size])
         self.input_x = tf.placeholder(tf.float32,[None, self.conf.height, self.conf.width, 3])
         self.input_x_r = tf.placeholder(tf.float32,[None, self.conf.height, self.conf.width, 2])
@@ -67,14 +66,14 @@ class GAN(object):
         self.ch1, self.ch2_, self.ch3 = tf.split(self.input_x, num_or_size_splits=3, axis= 3)
     #    print(self.X_rec.get_shape())
         print(self.ch1.get_shape())
-        self.X_rec = tf.concat([self.ch1, self.X_rec_s, self.ch3], axis= 3) 
+        self.X_rec = tf.concat([self.ch1, self.X_rec_s, self.ch3], axis= 3)
         print(self.X_rec.get_shape())
 
         with tf.variable_scope('Discriminator') as scope:
             self.out_real = discriminator(self.input_x, self.input_y, self.conf.batch_size)
             scope.reuse_variables()
             self.out_fake = discriminator(self.X_rec,  self.input_y, self.conf.batch_size)
-        
+
 
         # the loss for the conditional auto encoder
         self.d_loss_real = self.get_bce_loss(self.out_real, tf.ones_like(self.out_real))
@@ -84,7 +83,7 @@ class GAN(object):
         self.rec_loss = self.get_mse_loss(self.X_rec_s, self.ch2_)
 
         # build the model for the final conditional generation
-        
+
         self.dis_loss= self.d_loss_fake+self.d_loss_real
         self.gen_loss= self.rec_loss + self.g_loss*self.conf.gamma_gen
     #    self.gen_loss= self.rec_loss*self.get_coefficient(self.global_step) + self.g_loss*self.conf.gamma_gen  ## this is for dynamic loss
@@ -100,27 +99,27 @@ class GAN(object):
             self.test_out = generator(test_downs, self.random_s_test, inter_r, self.test_y, self.conf.batch_size)
         with tf.variable_scope('Generator', reuse= True) as scope:
             self.test_out2 = generator(test_downs, fix_s_test, inter_r, self.test_y, self.conf.batch_size)
-        
+
         print("==================FINAL shape is ")
         print(self.test_out.get_shape())
 
-        
-       
+
+
 
     def config_summary(self):
-        summarys = []                      
+        summarys = []
         summarys.append(tf.summary.scalar('/Rec_loss', self.rec_loss))
         summarys.append(tf.summary.scalar('/Global_step', self.global_step))
         summarys.append(tf.summary.scalar('/d_loss_real', self.d_loss_real))
         summarys.append(tf.summary.scalar('/d_loss_fake', self.d_loss_fake))
         summarys.append(tf.summary.scalar('/d_loss', self.dis_loss))
-        summarys.append(tf.summary.scalar('/g_loss', self.g_loss)) 
+        summarys.append(tf.summary.scalar('/g_loss', self.g_loss))
         summarys.append(tf.summary.scalar('/generator_loss', self.gen_loss))
         summarys.append(tf.summary.image('input_X', self.input_x, max_outputs = 10))
         summarys.append(tf.summary.image('input_s', self.ch2_, max_outputs = 10))
     #    summarys.append(tf.summary.image('input_r', self.input_x, max_outputs = 10))
         summarys.append(tf.summary.image('rec_r', self.X_rec_s, max_outputs = 10))
-        summarys.append(tf.summary.image('recon_X', self.X_rec, max_outputs = 10))        
+        summarys.append(tf.summary.image('recon_X', self.X_rec, max_outputs = 10))
         summary = tf.summary.merge(summarys)
         return summary
 
@@ -133,13 +132,13 @@ class GAN(object):
     #     summarys.append(tf.summary.image('test_out', self.test_out, max_outputs = 10))
     #     summary = tf.summary.merge(summarys)
     #     return summary
-    
+
     def get_coefficient(self, iter_number):
         boundaries= [50000,150000]
         values = [0.0, 0.5, 1.0]
         rate = tf.train.piecewise_constant(iter_number, boundaries, values)
         return rate
-        
+
 
     def get_bce_loss(self, output_tensor, target_tensor, epsilon=1e-10):
         return tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits= output_tensor, labels = target_tensor))
@@ -159,7 +158,7 @@ class GAN(object):
         checkpoint_path = os.path.join(
             self.conf.modeldir, 'model')
         self.saver.save(self.sess, checkpoint_path, global_step=step)
-    
+
     def save_summary(self, summary, step):
          print('---->summarizing', step)
          self.writer.add_summary(summary, step)
@@ -214,13 +213,13 @@ class GAN(object):
             res[:,self.conf.height*4+8:self.conf.height*5+8, 1]= imgs[k,:,:,0]
             res[:,self.conf.height*5+10:self.conf.height*6+10, 1]= imgs2[k,:,:,0]
             imsave(temp_test_dir, res)
-        print("Evaluation images generated！==============================") 
+        print("Evaluation images generated！==============================")
 
 
-    
+
 
     def generate_con_image(self):
-        
+
         for i in range(self.conf.n_class):
             sampled_y = np.zeros((self.conf.batch_size, self.conf.n_class), dtype=np.float32)
             sampled_y[:,i]=1
@@ -228,12 +227,12 @@ class GAN(object):
             for k in range(imgs.shape[0]):
                 imgs_folder = os.path.join(self.conf.working_directory, 'imgs_con_parallel', str(i))
                 if not os.path.exists(imgs_folder):
-                    os.makedirs(imgs_folder)   
+                    os.makedirs(imgs_folder)
                 imsave(os.path.join(imgs_folder,'%d.png') % k,
                     imgs[k,:,:,:])
-        print("conditional generated imgs saved!!!!==========================")               
-    
-    def evaluate(self, data):        
+        print("conditional generated imgs saved!!!!==========================")
+
+    def evaluate(self, data):
      #   data = data_reader()
         print("Now start Testing set evaluation ==============================")
         pbar = ProgressBar()
@@ -249,7 +248,7 @@ class GAN(object):
             y_label  = np.argmax(y, axis= 1)
             for j in range (self.conf.max_generated_imgs):
                 output_test = self.sess.run(self.test_out, feed_dict={self.test_x_r: x_extracted,  self.test_y: y})
-                for k in range(output_test.shape[0]):                    
+                for k in range(output_test.shape[0]):
                     # res = np.ones([self.conf.height, self.conf.width*3 +4, 3])
                     # res[:,0:self.conf.width,:]= x[k,:,:,:]
                     # res[:,self.conf.width+2:self.conf.width*2+2,(0,2)] = x_extracted[k,:,:,:]
@@ -268,39 +267,39 @@ class GAN(object):
            #     self.save_summary(summary, i*10*50+k*50+j)
         print("Evaluation images generated！==============================")
 
-    
+
     def generate_and_save(self):
         imgs = self.sess.run(self.generated_out)
         for k in range(imgs.shape[0]):
             imgs_folder = os.path.join(self.conf.working_directory, 'imgs_parallel')
             if not os.path.exists(imgs_folder):
-                os.makedirs(imgs_folder)      
-            res= np.zeros([imgs.shape[1],imgs.shape[2],3])         
+                os.makedirs(imgs_folder)
+            res= np.zeros([imgs.shape[1],imgs.shape[2],3])
             res[:,:,0]=imgs[k,:,:,0]
             res[:,:,1]= 0
-            res[:,:,2]=imgs[k,:,:,1]                
+            res[:,:,2]=imgs[k,:,:,1]
             imsave(os.path.join(imgs_folder,'%d.png') % k,
                 res)
             imsave(os.path.join(imgs_folder,'%d_ch0.png') % k,
-                imgs[k,:,:,0]) 
+                imgs[k,:,:,0])
             imsave(os.path.join(imgs_folder,'%d_ch1.png') % k,
-                imgs[k,:,:,1])    
+                imgs[k,:,:,1])
         print("generated imgs saved!!!!==========================")
 
 
-    def test(self):        
+    def test(self):
         print("======Now the parzen window evaluation ============================ ")
         if self.conf.checkpoint >0:
             print('=======Now load the model===============')
-            self.reload(self.conf.checkpoint)        
+            self.reload(self.conf.checkpoint)
         else:
             print("===================We need a model to reload, please provide the checkpoint")
             return
 
-        # Alpha actinin   Alpha tubulin   Beta actin   Desmoplakin  Fibrillarin 
+        # Alpha actinin   Alpha tubulin   Beta actin   Desmoplakin  Fibrillarin
         # Lamin B1   Myosin IIB  Sec61 beta  Tom20  ZO1
         # cls_to_evaluate = 9 #which class
-        # cls_name = 'ZO1' 
+        # cls_name = 'ZO1'
         # print(cls_name,"======",cls_to_evaluate)
 
 
@@ -308,7 +307,7 @@ class GAN(object):
         samples, labels = self.generate_samples()
   #      np.savez('samples_guide',a = samples, b = labels)
         print('save done')
-        
+
 
         np.random.shuffle(samples)
         print(samples.shape)
@@ -341,7 +340,7 @@ class GAN(object):
         data.reset()
         sigma = 0.1
         nlls = []
-      
+
         for i in range(1, 107 + 1):  # number of test batches = 107
             print("===============", i)
             X, _, _  = data.next_test_batch(self.conf.batch_size)
@@ -367,7 +366,7 @@ class GAN(object):
         model_path = checkpoint_path +'-'+str(epoch)
         if not os.path.exists(model_path+'.meta'):
             print('------- no such checkpoint', model_path)
-            return       
+            return
         self.saver.restore(self.sess, model_path)
         print("model load successfully===================")
 
@@ -378,7 +377,7 @@ class GAN(object):
         x_sigma = tf.multiply(1.0, tf.ones(tf.shape(x_mean)))
         return log_likelihood_gaussian(x_mean, x_sample, x_sigma)+\
                 log_likelihood_prior(self.latent_sample)-\
-                log_likelihood_gaussian(self.latent_sample, self.mean, self.stddev)        
+                log_likelihood_gaussian(self.latent_sample, self.mean, self.stddev)
 
     def evaluate_nll(self, test_input):
         sample_ll= []
@@ -415,7 +414,4 @@ class GAN(object):
         for k in range(self.conf.batch_size):
             temp_test_dir= os.path.join(imgs_test_folder, 'epoch_%d_#img_%d.png'%(epoch,k))
             imsave(temp_test_dir, imgs[k,:,:,0])
-        print("Parzen windows images generated！==============================")   
-
-        
-
+        print("Parzen windows images generated！==============================")

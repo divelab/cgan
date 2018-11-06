@@ -3,4 +3,6 @@ scipy
 argparse
 h5py
 tensorflow
+awscli
+progressbar
 
