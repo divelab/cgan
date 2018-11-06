@@ -60,6 +60,7 @@ class GAN(object):
         print("Start building the generator of the ConGAN========================")
         #build the conditional auto encoder
         with tf.variable_scope('Generator') as scope:
+            # Please note that the encode_img() function comes from the 'ops' module
             self.output_r, self.down_outputs = encode_img(self.input_x_r, self.conf.hidden_size)
             print(self.output_r.get_shape())
             self.X_rec_s = generator(self.down_outputs, self.sampled_z_s, self.output_r, self.input_y, self.conf.batch_size) # only s channel
